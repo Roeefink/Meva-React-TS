@@ -1,10 +1,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
-import { auth, db } from "../config/Firebase.ts";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
+import { auth } from "../config/Firebase.ts";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { Link } from "react-router-dom";
 
 interface FormData {
