@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
 import { auth } from "../config/Firebase.ts";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { Link } from "react-router-dom";
 
 interface FormData {
@@ -23,6 +29,7 @@ const LoginScreen: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,7 +62,6 @@ const LoginScreen: React.FC = () => {
       [name]: value,
     }));
 
-    // Clear error when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({
         ...prev,
@@ -70,7 +76,12 @@ const LoginScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Try to sign in with Firebase
+      // Set persistence based on "Remember me"
+      await setPersistence(
+        auth,
+        rememberMe ? browserLocalPersistence : browserSessionPersistence
+      );
+
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
       alert("Logged in successfully ✅");
       setFormData({ email: "", password: "" });
@@ -88,10 +99,26 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSubmit();
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      alert("Please enter your email first");
+      return;
     }
+    try {
+      await sendPasswordResetEmail(auth, formData.email);
+      alert("Password reset email sent ✅");
+    } catch (error: any) {
+      if (error.code === "auth/user-not-found") {
+        alert("No account found with this email.");
+      } else {
+        alert(error.message);
+      }
+      console.error(error);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSubmit();
   };
 
   return (
@@ -113,10 +140,7 @@ const LoginScreen: React.FC = () => {
           <div className="space-y-6">
             {/* Email Field */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -146,10 +170,7 @@ const LoginScreen: React.FC = () => {
 
             {/* Password Field */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -195,12 +216,15 @@ const LoginScreen: React.FC = () => {
                 <input
                   type="checkbox"
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded focus:ring-2"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   disabled={isLoading}
                 />
                 <span className="ml-2 text-sm text-gray-600">Remember me</span>
               </label>
               <button
                 type="button"
+                onClick={handleForgotPassword}
                 className="text-sm text-indigo-600 hover:text-indigo-500 font-medium focus:outline-none focus:underline"
                 disabled={isLoading}
               >
@@ -224,48 +248,15 @@ const LoginScreen: React.FC = () => {
                 "Sign In"
               )}
             </button>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-
-            {/* Social Login Buttons */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                disabled={isLoading}
-              >
-                <span>Google</span>
-              </button>
-              {/* <button
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                disabled={isLoading}
-              >
-                <span>GitHub</span>
-              </button> */}
-            </div>
           </div>
 
           {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <p className="mt-4 text-center text-sm">
-                Don’t have an account?{" "}
-                <Link to="/signup" className="text-blue-500 hover:underline">
-                  Signup here
-                </Link>
-              </p>
+              <Link to="/signup" className="text-blue-500 hover:underline">
+                Signup here
+              </Link>
             </p>
           </div>
         </div>

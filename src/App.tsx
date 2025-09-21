@@ -7,8 +7,9 @@ import {
 } from "react-router-dom";
 import ChatWindow from "./components/ChatWindow";
 import LoginPage from "./components/LoginPage";
-import SignupPage from "./pages/SignUpPage.tsx"; // ⬅️ make sure this file exists
-import { useAuth } from "./hooks/useAuth.ts";
+import SignupPage from "./pages/SignUpPage";
+import { useAuth } from "./hooks/useAuth";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -39,20 +40,32 @@ function App() {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <Router>
+    <Router basename="/Meva-React-TS/">
       <GlobalStyle />
       <AppContainer>
         <Routes>
-          {/* If logged in → go to chat window */}
-          <Route path="/" element={user ? <ChatWindow /> : <LoginPage />} />
-
-          {/* Signup page */}
+          {/* Login */}
           <Route
-            path="/signup"
-            element={user ? <Navigate to="/" /> : <SignupPage />}
+            path="/"
+            element={user ? <Navigate to="/chat" /> : <LoginPage />}
           />
 
-          {/* Fallback for unknown routes */}
+          {/* Signup */}
+          <Route
+            path="/signup"
+            element={user ? <Navigate to="/chat" /> : <SignupPage />}
+          />
+
+          {/* Chat */}
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <ChatWindow />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </AppContainer>
