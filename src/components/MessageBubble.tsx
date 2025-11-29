@@ -1,6 +1,6 @@
 import React from "react";
 import styled, { css } from "styled-components";
-import type { Message } from "./ChatWindow";
+import type { Message } from "../pages/ChatWindow";
 
 interface Props {
   message: Message;

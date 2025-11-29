@@ -1,0 +1,33 @@
+{
+  "name": "MEVA Medical Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "hostRequirements": {
+    "cpus": 4
+  },
+  "waitFor": "onCreateCommand",
+  "updateContentCommand": "npm install",
+  "postCreateCommand": "",
+  "postAttachCommand": {
+    "server": "npm run dev"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "styled-components.vscode-styled-components"
+      ]
+    },
+    "codespaces": {
+      "openFiles": ["src/App.tsx"]
+    }
+  },
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite Application",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "forwardPorts": [5173]
+}

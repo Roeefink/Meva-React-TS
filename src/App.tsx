@@ -1,15 +1,7 @@
 import styled, { createGlobalStyle } from "styled-components";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import ChatWindow from "./components/ChatWindow";
-import LoginPage from "./components/LoginPage";
-import SignupPage from "./pages/SignUpPage";
+import { BrowserRouter as Router } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
-import ProtectedRoute from "./components/ProtectedRoute";
+import AppRoutes from "./routes";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -43,31 +35,7 @@ function App() {
     <Router basename="/Meva-React-TS/">
       <GlobalStyle />
       <AppContainer>
-        <Routes>
-          {/* Login */}
-          <Route
-            path="/"
-            element={user ? <Navigate to="/chat" /> : <LoginPage />}
-          />
-
-          {/* Signup */}
-          <Route
-            path="/signup"
-            element={user ? <Navigate to="/chat" /> : <SignupPage />}
-          />
-
-          {/* Chat */}
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <ChatWindow />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+        <AppRoutes user={user} />
       </AppContainer>
     </Router>
   );

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import MessageList from "./MessageList";
-import MessageInput from "./MessageInput";
-import MenuBar from "./MenuBar";
+import MessageList from "../components/MessageList";
+import MessageInput from "../components/MessageInput";
+import MenuBar from "../components/MenuBar";
 export interface Message {
   id: number;
   sender: "user" | "bot";

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
-import type { Message } from "./ChatWindow";
+import type { Message } from "../pages/ChatWindow";
 import MessageBubble from "./MessageBubble";
 
 interface Props {

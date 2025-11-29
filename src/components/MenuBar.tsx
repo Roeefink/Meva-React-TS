@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import styled from "styled-components";
 import { signOut } from "firebase/auth";
 import { auth } from "../config/Firebase";
@@ -54,6 +54,7 @@ const LogoutButton = styled.button`
 
 export default function MenuBar() {
   const [open, setOpen] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate(); // ⬅️ for redirect
 
   const handleLogout = async () => {
@@ -69,17 +70,59 @@ export default function MenuBar() {
 
   return (
     <>
-      <Burger onClick={() => setOpen((o) => !o)}>
+      <Burger
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={(event) => {
+          const nextTarget = event.relatedTarget as Node | null;
+          if (!sidebarRef.current || !nextTarget) {
+            setOpen(false);
+            return;
+          }
+          if (!sidebarRef.current.contains(nextTarget)) {
+            setOpen(false);
+          }
+        }}
+      >
         <Line />
         <Line />
         <Line />
       </Burger>
-      <Sidebar open={open}>
-        <h3>Menu</h3>
+      <Sidebar
+        ref={sidebarRef}
+        open={open}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+      >
         <ul style={{ listStyle: "none", padding: 0 }}>
-          <li>Home</li>
-          <li>About</li>
-          <li>Contact</li>
+          <li
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              navigate("/chat");
+              setOpen(false);
+            }}
+          >
+            Home
+          </li>
+          <br />
+          <li
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              navigate("/about");
+              setOpen(false);
+            }}
+          >
+            About
+          </li>
+          <br />
+          <li
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              navigate("/contact");
+              setOpen(false);
+            }}
+          >
+            Contact
+          </li>
         </ul>
         <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
       </Sidebar>

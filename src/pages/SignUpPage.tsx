@@ -106,7 +106,7 @@ const SignupPage: React.FC = () => {
         <button
           onClick={handleSignup}
           disabled={loading}
-          className="w-full bg-green-500 text-white py-2 rounded-lg flex items-center justify-center"
+          className="w-full bg-blue-500 text-white py-2 rounded-lg flex items-center justify-center"
         >
           <UserPlus className="mr-2" size={18} />
           {loading ? "Creating..." : "Signup"}
