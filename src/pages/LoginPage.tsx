@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { auth } from "../config/Firebase.ts";
 import {
   signInWithEmailAndPassword,
@@ -9,6 +9,8 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { Link } from "react-router-dom";
+import Icon from "../components/Icon.tsx";
+import SignInBtn from "../components/SignInBtn.tsx";
 
 interface FormData {
   email: string;
@@ -126,9 +128,7 @@ const LoginScreen: React.FC = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
-            <LogIn className="w-8 h-8 text-white" />
-          </div>
+          <Icon />
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome Back
           </h1>
@@ -233,21 +233,7 @@ const LoginScreen: React.FC = () => {
             </div>
 
             {/* Submit Button */}
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium focus:outline-none"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Signing in...
-                </div>
-              ) : (
-                "Sign In"
-              )}
-            </button>
+            <SignInBtn onClick={handleSubmit} isLoading={isLoading} />
           </div>
 
           {/* Footer */}

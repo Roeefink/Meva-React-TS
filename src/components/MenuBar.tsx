@@ -107,7 +107,7 @@ export default function MenuBar() {
           <li
             style={{ cursor: "pointer" }}
             onClick={() => {
-              navigate("/about");
+              navigate("/chat/about");
               setOpen(false);
             }}
           >
@@ -117,11 +117,21 @@ export default function MenuBar() {
           <li
             style={{ cursor: "pointer" }}
             onClick={() => {
-              navigate("/contact");
+              navigate("/chat/contact");
               setOpen(false);
             }}
           >
             Contact
+          </li>
+          <br />
+          <li
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              navigate("/chat/add-info");
+              setOpen(false);
+            }}
+          >
+            Add Info
           </li>
         </ul>
         <LogoutButton onClick={handleLogout}>Logout</LogoutButton>

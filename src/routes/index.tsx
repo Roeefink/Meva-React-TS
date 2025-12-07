@@ -5,7 +5,9 @@ import LoginPage from "../pages/LoginPage";
 import SignupPage from "../pages/SignUpPage";
 import { FirebaseTest } from "../components/FirebaseTest";
 import ProtectedRoute from "../components/ProtectedRoute";
+import MainLayout from "../components/MainLayout";
 import type { User } from "firebase/auth";
+import AddInfoPage from "../pages/AddInfoPage";
 
 interface AppRoutesProps {
   user: User | null;
@@ -29,25 +31,23 @@ export default function AppRoutes({ user }: AppRoutesProps) {
         element={user ? <Navigate to="/chat" /> : <SignupPage />}
       />
 
-      {/* Chat */}
+      {/* Main Layout with nested routes */}
       <Route
         path="/chat"
         element={
           <ProtectedRoute>
-            <ChatWindow />
+            <MainLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<ChatWindow />} />
+        <Route path="about" element={<AboutWindow />} />
+        <Route path="add-info" element={<AddInfoPage />} />
+      </Route>
 
-      {/* About */}
-      <Route
-        path="/about"
-        element={
-          <ProtectedRoute>
-            <AboutWindow />
-          </ProtectedRoute>
-        }
-      />
+      {/* Redirect old routes to new nested structure */}
+      <Route path="/about" element={<Navigate to="/chat/about" replace />} />
+      <Route path="/add-info" element={<Navigate to="/chat/add-info" replace />} />
 
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
