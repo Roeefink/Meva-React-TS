@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, UserPlus } from "lucide-react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../config/Firebase.ts"; // adjust if path is different
+import { authService } from "@/services/authService";
 
 interface FormData {
   email: string;
@@ -40,12 +39,9 @@ const SignupPage: React.FC = () => {
     setLoading(true);
     setMessage("");
     try {
-      await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      setMessage("✅ Account created successfully!");
+      const { error } = await authService.signUp(formData.email, formData.password);
+      if (error) throw error;
+      setMessage("✅ Account created successfully! Please check your email for verification.");
     } catch (error: any) {
       setMessage(`❌ Signup failed: ${error.message}`);
     } finally {

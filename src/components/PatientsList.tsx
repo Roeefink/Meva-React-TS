@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { firestoreService } from "@/services/firebaseService";
+import { supabaseService } from "@/services/supabaseService";
 import type { Patient } from "@/types";
 
 export function PatientList() {
@@ -12,8 +12,12 @@ export function PatientList() {
 
   const loadPatients = async () => {
     try {
-      const data = await firestoreService.getAll<Patient>("patients");
-      setPatients(data);
+      const { data, error } = await supabaseService.getAll<Patient>("patients");
+      if (error) {
+          console.error("Failed to load patients:", error);
+      } else {
+          setPatients(data || []);
+      }
     } catch (error) {
       console.error("Failed to load patients:", error);
     } finally {
@@ -23,7 +27,11 @@ export function PatientList() {
 
   const handleDelete = async (id: string) => {
     try {
-      await firestoreService.delete("patients", id);
+      const { error } = await supabaseService.delete("patients", id);
+      if (error) {
+            console.error("Failed to delete patient:", error);
+            return;
+      }
       setPatients(patients.filter((p) => p.id !== id));
     } catch (error) {
       console.error("Failed to delete patient:", error);

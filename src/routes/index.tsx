@@ -3,10 +3,10 @@ import ChatWindow from "../pages/ChatWindow";
 import AboutWindow from "../pages/AboutWindow";
 import LoginPage from "../pages/LoginPage";
 import SignupPage from "../pages/SignUpPage";
-import { FirebaseTest } from "../components/FirebaseTest";
+import { SupabaseTest } from "../components/SupabaseTest";
 import ProtectedRoute from "../components/ProtectedRoute";
 import MainLayout from "../components/MainLayout";
-import type { User } from "firebase/auth";
+import type { User } from "@supabase/supabase-js";
 import AddInfoPage from "../pages/AddInfoPage";
 
 interface AppRoutesProps {
@@ -16,8 +16,8 @@ interface AppRoutesProps {
 export default function AppRoutes({ user }: AppRoutesProps) {
   return (
     <Routes>
-      {/* Firebase Test Route */}
-      <Route path="/test-firebase" element={<FirebaseTest />} />
+      {/* Supabase Test Route */}
+      <Route path="/test-supabase" element={<SupabaseTest />} />
 
       {/* Login */}
       <Route

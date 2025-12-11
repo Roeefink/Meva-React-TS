@@ -1,13 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { auth } from "../config/Firebase.ts";
-import {
-  signInWithEmailAndPassword,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  sendPasswordResetEmail,
-} from "firebase/auth";
+import { authService } from "@/services/authService";
 import { Link } from "react-router-dom";
 import Icon from "../components/Icon.tsx";
 import SignInBtn from "../components/SignInBtn.tsx";
@@ -78,23 +71,23 @@ const LoginScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Set persistence based on "Remember me"
-      await setPersistence(
-        auth,
-        rememberMe ? browserLocalPersistence : browserSessionPersistence
-      );
+      // Supabase handles persistence automatically by default (localStorage)
+      // If specific persistence is needed, it's configured in the client initialization options
 
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const { error } = await authService.signIn(formData.email, formData.password);
+      
+      if (error) {
+         if (error.message.includes("Invalid login credentials")) {
+            alert("Incorrect email or password. Please try again.");
+         } else {
+             alert(error.message);
+         }
+         throw error;
+      }
+
       alert("Logged in successfully ✅");
       setFormData({ email: "", password: "" });
     } catch (error: any) {
-      if (error.code === "auth/user-not-found") {
-        alert("No user found with this email. Try signing up.");
-      } else if (error.code === "auth/wrong-password") {
-        alert("Incorrect password. Please try again.");
-      } else {
-        alert(error.message);
-      }
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -107,15 +100,12 @@ const LoginScreen: React.FC = () => {
       return;
     }
     try {
-      await sendPasswordResetEmail(auth, formData.email);
+      const { error } = await authService.resetPassword(formData.email);
+      if (error) throw error;
       alert("Password reset email sent ✅");
     } catch (error: any) {
-      if (error.code === "auth/user-not-found") {
-        alert("No account found with this email.");
-      } else {
-        alert(error.message);
-      }
-      console.error(error);
+       alert(error.message);
+       console.error(error);
     }
   };
 

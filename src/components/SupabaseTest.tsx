@@ -1,20 +1,13 @@
 import { useState } from "react";
-import { db } from "@/config/Firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
+import { supabaseService } from "@/services/supabaseService";
 
 interface TestData {
   id: string;
   message: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
-export function FirebaseTest() {
+export function SupabaseTest() {
   const [status, setStatus] = useState<string>("");
   const [data, setData] = useState<TestData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,28 +19,28 @@ export function FirebaseTest() {
     try {
       // Test 1: Write data
       setStatus("✏️ Writing test data...");
-      const docRef = await addDoc(collection(db, "test"), {
-        message: "Firebase is working!",
-        timestamp: new Date(),
-        testNumber: Math.random(),
-      });
-      setStatus(`✅ Write successful! Doc ID: ${docRef.id}`);
+      const newEntry = {
+        message: "Supabase is working!",
+        timestamp: new Date().toISOString(),
+      };
+      
+      const { data: createdData, error: createError } = await supabaseService.create<TestData>("test", newEntry as any);
+      
+      if (createError) throw new Error(createError.message);
+      
+      setStatus(`✅ Write successful! Doc ID: ${createdData?.id}`);
 
       // Test 2: Read data
       setStatus("📖 Reading data...");
-      const querySnapshot = await getDocs(collection(db, "test"));
-      const fetchedData: TestData[] = [];
-      querySnapshot.forEach((doc) => {
-        fetchedData.push({
-          id: doc.id,
-          ...doc.data(),
-        } as TestData);
-      });
-      setData(fetchedData);
-      setStatus(`✅ Read successful! Found ${fetchedData.length} documents`);
+      const { data: fetchedData, error: readError } = await supabaseService.getAll<TestData>("test");
+      
+      if (readError) throw new Error(readError.message);
+
+      setData(fetchedData || []);
+      setStatus(`✅ Read successful! Found ${fetchedData?.length || 0} documents`);
     } catch (error: any) {
       setStatus(`❌ Error: ${error.message}`);
-      console.error("Firebase test error:", error);
+      console.error("Supabase test error:", error);
     } finally {
       setLoading(false);
     }
@@ -56,8 +49,9 @@ export function FirebaseTest() {
   const clearTestData = async () => {
     setLoading(true);
     try {
+        if (data.length === 0) return;
       for (const item of data) {
-        await deleteDoc(doc(db, "test", item.id));
+         await supabaseService.delete("test", item.id);
       }
       setData([]);
       setStatus("🗑️ Test data cleared");
@@ -70,7 +64,7 @@ export function FirebaseTest() {
 
   return (
     <div style={{ padding: "20px", fontFamily: "monospace" }}>
-      <h2>🔥 Firebase Connection Test</h2>
+      <h2>⚡ Supabase Connection Test</h2>
 
       <div style={{ marginBottom: "20px" }}>
         <button

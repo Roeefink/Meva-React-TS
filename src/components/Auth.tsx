@@ -1,13 +1,5 @@
 import { useState } from "react";
-import { auth } from "../config/Firebase";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  sendPasswordResetEmail,
-} from "firebase/auth";
+import { authService } from "@/services/authService";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -18,17 +10,13 @@ export default function Auth() {
   // Login / Signup handler
   const handleAuth = async () => {
     try {
-      // Set persistence based on Remember me checkbox
-      await setPersistence(
-        auth,
-        rememberMe ? browserLocalPersistence : browserSessionPersistence
-      );
-
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        const { error } = await authService.signIn(email, password);
+        if (error) throw error;
         alert("Logged in ✅");
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const { error } = await authService.signUp(email, password);
+        if (error) throw error;
         alert("Account created 🎉");
       }
     } catch (error: any) {
@@ -43,7 +31,8 @@ export default function Auth() {
       return;
     }
     try {
-      await sendPasswordResetEmail(auth, email);
+      const { error } = await authService.resetPassword(email);
+      if (error) throw error;
       alert("Password reset email sent ✅");
     } catch (error: any) {
       alert(error.message);

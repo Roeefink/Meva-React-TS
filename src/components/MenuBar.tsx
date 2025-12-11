@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import styled from "styled-components";
-import { signOut } from "firebase/auth";
-import { auth } from "../config/Firebase";
+import { authService } from "@/services/authService";
 import { useNavigate } from "react-router-dom"; // ⬅️ import this
 
 const Burger = styled.div`
@@ -59,7 +58,7 @@ export default function MenuBar() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await authService.signOut();
       setOpen(false); // close sidebar
       navigate("/"); // redirect to "/" → LoginPage will show (because user=null)
     } catch (error) {
