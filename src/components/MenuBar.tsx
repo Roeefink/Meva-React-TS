@@ -38,6 +38,17 @@ const Sidebar = styled.div<{ open: boolean }>`
   box-shadow: ${({ open }) => (open ? "2px 0 8px rgba(0,0,0,0.1)" : "none")};
 `;
 
+const Overlay = styled.div<{ open: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
+  display: ${({ open }) => (open ? "block" : "none")};
+  background: transparent; // Invisible, but catches clicks
+`;
+
 const LogoutButton = styled.button`
   position: absolute;
   bottom: 2em;
@@ -69,19 +80,8 @@ export default function MenuBar() {
 
   return (
     <>
-      <Burger
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={(event) => {
-          const nextTarget = event.relatedTarget as Node | null;
-          if (!sidebarRef.current || !nextTarget) {
-            setOpen(false);
-            return;
-          }
-          if (!sidebarRef.current.contains(nextTarget)) {
-            setOpen(false);
-          }
-        }}
-      >
+      <Overlay open={open} onClick={() => setOpen(false)} />
+      <Burger onClick={() => setOpen(!open)}>
         <Line />
         <Line />
         <Line />
@@ -89,8 +89,6 @@ export default function MenuBar() {
       <Sidebar
         ref={sidebarRef}
         open={open}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
       >
         <ul style={{ listStyle: "none", padding: 0 }}>
           <li
