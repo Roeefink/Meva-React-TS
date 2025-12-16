@@ -4,6 +4,11 @@ const Content = styled.div`
   padding: 20px;
   color: #222;
   line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
+  min-height: 78.3vh;
 `;
 
 const Title = styled.h2`

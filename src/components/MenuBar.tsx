@@ -116,7 +116,7 @@ export default function MenuBar() {
           <li
             style={{ cursor: "pointer" }}
             onClick={() => {
-              navigate("/chat/contact");
+              navigate("/chat/contact-us");
               setOpen(false);
             }}
           >
