@@ -1,7 +1,6 @@
-<<<<<<< HEAD
 # MEVA-React
 This is the react repository for MEVA medical project
-=======
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
@@ -56,4 +55,3 @@ export default tseslint.config({
   },
 })
 ```
->>>>>>> 679d00c (First push)
