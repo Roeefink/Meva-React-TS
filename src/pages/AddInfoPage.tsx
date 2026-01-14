@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+import InfoForm from "../components/InfoForm";
+
 const Container = styled.div`
   padding: 20px;
   display: flex;
@@ -12,7 +14,7 @@ const Container = styled.div`
 export default function AddInfoPage() {
   return (
     <Container>
-      <h1>Add Info Page</h1>
+      <InfoForm />
     </Container>
   );
 }
