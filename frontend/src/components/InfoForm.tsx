@@ -81,20 +81,41 @@ export default function InfoForm() {
         e.preventDefault();
         setLoading(true);
 
-        const { error } = await supabase
-            .from('info_test')
-            .insert([{ title, description }]);
+        try {
+            // 1. Get the current user's session token
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
 
-        if (error) {
-            console.error("Error inserting data:", error);
-            alert("Error adding info: " + error.message);
-        } else {
-            console.log("Data inserted successfully");
+            if (!token) {
+                throw new Error("You must be logged in to add info.");
+            }
+
+            // 2. Call the backend API
+            const response = await fetch('http://localhost:3001/api/v1/info', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ title, description }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || "Failed to add info");
+            }
+
+            console.log("Data inserted successfully via API");
             alert("Info added successfully!");
             setTitle("");
             setDescription("");
+        } catch (error: any) {
+            console.error("Error inserting data:", error);
+            alert("Error adding info: " + error.message);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (

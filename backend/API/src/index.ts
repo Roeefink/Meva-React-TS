@@ -4,7 +4,10 @@ import dotenv from 'dotenv';
 import routes from './routes/index.js';
 
 // Load environment variables
-dotenv.config();
+import path from 'path';
+
+// Load environment variables from the root of the API service
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 // Initialize Express
 const app = express();

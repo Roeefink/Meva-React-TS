@@ -1,47 +1,74 @@
 import React from "react";
-import styled, { css } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import type { Message } from "../pages/ChatWindow";
 
 interface Props {
   message: Message;
 }
 
+const popIn = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+`;
+
 const Bubble = styled.div<{ sender: "user" | "bot" }>`
   max-width: 75%;
-  padding: 12px 16px;
-  border-radius: 16px;
-  font-size: 1rem;
-  line-height: 1.5;
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 0.95rem;
+  line-height: 1.6;
   position: relative;
-  background: ${({ sender }) =>
-    sender === "user" ? "rgb(36, 143, 201)" : "#eaf6f6"};
-  color: ${({ sender }) => (sender === "user" ? "#fff" : "#222")};
-  align-self: ${({ sender }) =>
-    sender === "user" ? "flex-end" : "flex-start"};
-  box-shadow: 0 2px 8px rgba(230, 237, 236, 0.85);
+  letter-spacing: 0.3px;
+  
+  /* Animation */
+  animation: ${popIn} 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 
+  /* Sender Specific Styles */
   ${({ sender }) =>
     sender === "user"
       ? css`
+          background: linear-gradient(135deg, rgb(36, 143, 201), rgb(25, 110, 160));
+          color: #fff;
+          align-self: flex-end;
           border-bottom-right-radius: 4px;
+          box-shadow: 0 4px 15px rgba(36, 143, 201, 0.3);
         `
       : css`
+          background: #ffffff;
+          color: #2d3748;
+          align-self: flex-start;
           border-bottom-left-radius: 4px;
+          border: 1px solid rgba(0, 0, 0, 0.05);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         `}
+    
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
 `;
 
-const Timestamp = styled.span`
+const Timestamp = styled.span<{ sender: "user" | "bot" }>`
   display: block;
-  font-size: 0.75rem;
-  color: #rgb(121, 124, 126);
-  margin-top: 4px;
+  font-size: 0.7rem;
+  margin-top: 6px;
   text-align: right;
+  opacity: 0.8;
+  font-weight: 500;
+  color: ${({ sender }) => (sender === "user" ? "rgba(255, 255, 255, 0.85)" : "#94a3b8")};
 `;
 
 const MessageBubble: React.FC<Props> = ({ message }) => (
   <Bubble sender={message.sender}>
     {message.text}
-    <Timestamp>{message.timestamp}</Timestamp>
+    <Timestamp sender={message.sender}>{message.timestamp}</Timestamp>
   </Bubble>
 );
 

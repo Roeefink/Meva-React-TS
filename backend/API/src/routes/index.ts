@@ -11,4 +11,8 @@ router.get('/health', (req, res) => {
 // Info routes
 router.use('/info', infoRouter);
 
+// Chat routes
+import chatRouter from './chat.js';
+router.use('/chat', chatRouter);
+
 export default router;
