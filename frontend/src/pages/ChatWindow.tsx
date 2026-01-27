@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { History, MessageSquarePlus } from "lucide-react"; 
+import { History, MessageSquarePlus } from "lucide-react";
 import MessageList from "../components/MessageList";
 import MessageInput from "../components/MessageInput";
 import ChatHistoryDropdown from "../components/ChatHistoryDropdown";
@@ -151,10 +151,11 @@ const ChatWindow: React.FC = () => {
   // 2. Fetch Sessions
   const fetchSessions = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:3001/api/v1/chat/sessions', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/v1/chat/sessions`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         // Ensure sessions is an array to prevent crashes
@@ -176,9 +177,10 @@ const ChatWindow: React.FC = () => {
   // 3. Create New Session
   const createSession = async (token: string, initialMessage?: string) => {
     try {
-      const response = await fetch('http://localhost:3001/api/v1/chat/sessions', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/v1/chat/sessions`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
@@ -189,16 +191,16 @@ const ChatWindow: React.FC = () => {
         const newSession = data.session;
         setSessions(prev => [newSession, ...prev]);
         setActiveSessionId(newSession.id);
-        
+
         if (!initialMessage) {
-             setMessages([{
-                id: Date.now(),
-                sender: "bot",
-                text: "New chat started. How can I help you?",
-                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-             }]);
+          setMessages([{
+            id: Date.now(),
+            sender: "bot",
+            text: "New chat started. How can I help you?",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          }]);
         }
-        setIsHistoryOpen(false); 
+        setIsHistoryOpen(false);
         return newSession.id;
       }
     } catch (err) {
@@ -210,16 +212,17 @@ const ChatWindow: React.FC = () => {
   // 4. Load Messages when active session changes
   useEffect(() => {
     if (!activeSessionId) {
-        // If explicitly set to null (e.g. initial load empty, or deleted all), clear messages
-        setMessages([]); 
-        return;
+      // If explicitly set to null (e.g. initial load empty, or deleted all), clear messages
+      setMessages([]);
+      return;
     }
     if (!userToken) return;
 
     const loadMessages = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`http://localhost:3001/api/v1/chat?sessionId=${activeSessionId}`, {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${API_URL}/api/v1/chat?sessionId=${activeSessionId}`, {
           headers: { 'Authorization': `Bearer ${userToken}` }
         });
 
@@ -228,12 +231,12 @@ const ChatWindow: React.FC = () => {
           if (data.messages && data.messages.length > 0) {
             setMessages(data.messages);
           } else {
-             setMessages([{
-                id: Date.now(),
-                sender: "bot",
-                text: "Start a new conversation.",
-                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-             }]);
+            setMessages([{
+              id: Date.now(),
+              sender: "bot",
+              text: "Start a new conversation.",
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            }]);
           }
         }
       } catch (err) {
@@ -253,10 +256,10 @@ const ChatWindow: React.FC = () => {
     // Auto-create session if none exists
     let currentSessionId = activeSessionId;
     if (!currentSessionId) {
-        currentSessionId = await createSession(userToken, text);
-        if (!currentSessionId) return; // Failed to create
-        // Clear default messages if we just created it
-        setMessages([]);
+      currentSessionId = await createSession(userToken, text);
+      if (!currentSessionId) return; // Failed to create
+      // Clear default messages if we just created it
+      setMessages([]);
     }
 
     const userMsg: Message = {
@@ -269,7 +272,8 @@ const ChatWindow: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/v1/chat', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/v1/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -311,86 +315,88 @@ const ChatWindow: React.FC = () => {
   // 5. Delete Session
   const deleteSession = async (sessionId: number) => {
     if (!userToken) return;
-    
+
     // Store previous state for rollback
     const previousSessions = [...sessions];
     const previousActiveId = activeSessionId;
 
     try {
-        // Optimistic update
-        setSessions(prev => prev.filter(s => s.id !== sessionId));
-        
-        if (activeSessionId === sessionId) {
-            const remaining = sessions.filter(s => s.id !== sessionId);
-            if (remaining.length > 0) {
-                setActiveSessionId(remaining[0].id);
-            } else {
-                setActiveSessionId(null);
-                setMessages([{
-                    id: Date.now(),
-                    sender: "bot",
-                    text: "No chats yet. How can I help?",
-                    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                }]);
-            }
-        }
+      // Optimistic update
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
 
-        const response = await fetch(`http://localhost:3001/api/v1/chat/sessions/${sessionId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${userToken}` }
-        });
-
-        if (!response.ok) {
-             throw new Error("Failed to delete");
+      if (activeSessionId === sessionId) {
+        const remaining = sessions.filter(s => s.id !== sessionId);
+        if (remaining.length > 0) {
+          setActiveSessionId(remaining[0].id);
+        } else {
+          setActiveSessionId(null);
+          setMessages([{
+            id: Date.now(),
+            sender: "bot",
+            text: "No chats yet. How can I help?",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          }]);
         }
+      }
+
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/v1/chat/sessions/${sessionId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${userToken}` }
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete");
+      }
     } catch (err) {
-        console.error("Failed to delete session", err);
-        alert("Failed to delete chat. Please try again.");
-        // Revert state
-        setSessions(previousSessions);
-        setActiveSessionId(previousActiveId);
-        // Force refresh to be safe
-        fetchSessions(userToken); 
+      console.error("Failed to delete session", err);
+      alert("Failed to delete chat. Please try again.");
+      // Revert state
+      setSessions(previousSessions);
+      setActiveSessionId(previousActiveId);
+      // Force refresh to be safe
+      fetchSessions(userToken);
     }
   };
 
   // 6. Delete All Sessions
   const deleteAllSessions = async () => {
     if (!userToken) return;
-    
+
     // Store previous state for rollback
     const previousSessions = [...sessions];
     const previousActiveId = activeSessionId;
     const previousMessages = [...messages];
 
     try {
-        // Optimistic update
-        setSessions([]);
-        setActiveSessionId(null);
-        setMessages([{
-            id: Date.now(),
-            sender: "bot",
-            text: "No chats yet. How can I help?",
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        }]);
+      // Optimistic update
+      setSessions([]);
+      setActiveSessionId(null);
+      setMessages([{
+        id: Date.now(),
+        sender: "bot",
+        text: "No chats yet. How can I help?",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }]);
 
-        const response = await fetch(`http://localhost:3001/api/v1/chat/sessions`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${userToken}` }
-        });
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/v1/chat/sessions`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${userToken}` }
+      });
 
-        if (!response.ok) {
-             throw new Error("Failed to delete all sessions");
-        }
+      if (!response.ok) {
+        throw new Error("Failed to delete all sessions");
+      }
     } catch (err) {
-        console.error("Failed to delete all sessions", err);
-        alert("Failed to delete all history. Please try again.");
-        // Revert state
-        setSessions(previousSessions);
-        setActiveSessionId(previousActiveId);
-        setMessages(previousMessages);
-        
-        fetchSessions(userToken); 
+      console.error("Failed to delete all sessions", err);
+      alert("Failed to delete all history. Please try again.");
+      // Revert state
+      setSessions(previousSessions);
+      setActiveSessionId(previousActiveId);
+      setMessages(previousMessages);
+
+      fetchSessions(userToken);
     }
   };
 
@@ -400,9 +406,9 @@ const ChatWindow: React.FC = () => {
     <PageContainer>
       <Header>
         <HeaderLeft>
-          <HistoryButton 
+          <HistoryButton
             ref={historyButtonRef}
-            isActive={isHistoryOpen} 
+            isActive={isHistoryOpen}
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
           >
             <History size={18} />
@@ -410,7 +416,7 @@ const ChatWindow: React.FC = () => {
           </HistoryButton>
 
           {currentSession && (
-              <CurrentSessionTitle>{currentSession.title}</CurrentSessionTitle>
+            <CurrentSessionTitle>{currentSession.title}</CurrentSessionTitle>
           )}
         </HeaderLeft>
 
@@ -420,7 +426,7 @@ const ChatWindow: React.FC = () => {
         </NewChatButton>
       </Header>
 
-      <ChatHistoryDropdown 
+      <ChatHistoryDropdown
         sessions={sessions}
         activeSessionId={activeSessionId}
         onSelectSession={(id) => setActiveSessionId(id)}
