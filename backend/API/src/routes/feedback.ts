@@ -27,26 +27,26 @@ router.post('/', async (req: Request, res: Response) => {
 
         // Send Email via Gmail
         if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-            try {
-                const transporter = nodemailer.createTransport({
-                    host: 'smtp.gmail.com',
-                    port: 587,
-                    secure: false, // true for 465, false for other ports
-                    requireTLS: true,
-                    auth: {
-                        user: process.env.GMAIL_USER,
-                        pass: process.env.GMAIL_APP_PASSWORD
-                    }
-                });
 
-                // Non-blocking email sending
-                transporter.sendMail({
-                    from: `"Meva Medical" <${process.env.GMAIL_USER}>`,
-                    to: 'mevamedicalusa@gmail.com',
-                    replyTo: email, // Reply directly to the user
-                    subject: `New Feedback from ${name}`,
-                    text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
-                    html: `
+            const transporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false, // true for 465, false for other ports
+                requireTLS: true,
+                auth: {
+                    user: process.env.GMAIL_USER,
+                    pass: process.env.GMAIL_APP_PASSWORD
+                }
+            });
+
+            // Non-blocking email sending
+            transporter.sendMail({
+                from: `"Meva Medical" <${process.env.GMAIL_USER}>`,
+                to: 'mevamedicalusa@gmail.com',
+                replyTo: email, // Reply directly to the user
+                subject: `New Feedback from ${name}`,
+                text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+                html: `
                         <h3>New Feedback Received</h3>
                         <p><strong>Name:</strong> ${name}</p>
                         <p><strong>Email:</strong> ${email}</p>
@@ -54,20 +54,20 @@ router.post('/', async (req: Request, res: Response) => {
                         <p><strong>Message:</strong></p>
                         <p>${message.replace(/\n/g, '<br/>')}</p>
                     `
-                }).then(() => {
-                    console.log(`Email sent to mevamedicalusa@gmail.com`);
-                }).catch((emailError) => {
-                    console.error('Failed to send email:', emailError);
-                });
-            } else {
-                console.warn('Skipping email: GMAIL_USER or GMAIL_APP_PASSWORD not set.');
-            }
-
-            res.status(201).json({ message: 'Feedback received successfully' });
-        } catch (error: any) {
-            console.error('Error processing feedback:', error);
-            res.status(500).json({ error: 'Failed to submit feedback' });
+            }).then(() => {
+                console.log(`Email sent to mevamedicalusa@gmail.com`);
+            }).catch((emailError) => {
+                console.error('Failed to send email:', emailError);
+            });
+        } else {
+            console.warn('Skipping email: GMAIL_USER or GMAIL_APP_PASSWORD not set.');
         }
-    });
+
+        res.status(201).json({ message: 'Feedback received successfully' });
+    } catch (error: any) {
+        console.error('Error processing feedback:', error);
+        res.status(500).json({ error: 'Failed to submit feedback' });
+    }
+});
 
 export default router;
