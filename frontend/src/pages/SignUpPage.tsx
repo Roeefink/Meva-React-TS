@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, UserPlus } from "lucide-react";
 import { authService } from "@/services/authService";
+import { Link } from "react-router-dom";
 
 interface FormData {
   email: string;
@@ -110,9 +111,9 @@ const SignupPage: React.FC = () => {
 
         <p className="mt-4 text-center text-sm">
           Already have an account?{" "}
-          <a href="/" className="text-blue-500 hover:underline">
+          <Link to="/" className="text-blue-500 hover:underline">
             Login here
-          </a>
+          </Link>
         </p>
 
         {message && (
