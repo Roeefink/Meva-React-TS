@@ -2,7 +2,7 @@
   "name": "meva-medical",
   "private": true,
   "homepage": "https://Roeefink.github.io/Meva-React-TS",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite --open",
