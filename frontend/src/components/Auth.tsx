@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { authService } from "@/services/authService";
+import Modal from "./Modal";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -7,40 +8,54 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
 
+  // Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+
+  const showAlert = (message: string) => {
+    setModalMessage(message);
+    setModalOpen(true);
+  };
+
   // Login / Signup handler
   const handleAuth = async () => {
     try {
       if (isLogin) {
         const { error } = await authService.signIn(email, password);
         if (error) throw error;
-        alert("Logged in ✅");
+        showAlert("Logged in ✅");
       } else {
         const { error } = await authService.signUp(email, password);
         if (error) throw error;
-        alert("Account created 🎉");
+        showAlert("Account created 🎉");
       }
     } catch (error: any) {
-      alert(error.message);
+      showAlert(error.message);
     }
   };
 
   // Forgot password handler
   const handleForgotPassword = async () => {
     if (!email) {
-      alert("Please enter your email first");
+      showAlert("Please enter your email first");
       return;
     }
     try {
       const { error } = await authService.resetPassword(email);
       if (error) throw error;
-      alert("Password reset email sent ✅");
+      showAlert("Password reset email sent ✅");
     } catch (error: any) {
-      alert(error.message);
+      showAlert(error.message);
     }
   };
 
   return (
     <div className="flex flex-col gap-2 w-64 mx-auto mt-10">
+      <Modal 
+        isOpen={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+        message={modalMessage} 
+      />
       <input
         type="email"
         placeholder="Email"

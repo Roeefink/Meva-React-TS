@@ -4,6 +4,7 @@ import { authService } from "@/services/authService";
 import { Link } from "react-router-dom";
 import Icon from "../components/Icon.tsx";
 import SignInBtn from "../components/SignInBtn.tsx";
+import Modal from "../components/Modal";
 
 interface FormData {
   email: string;
@@ -25,6 +26,15 @@ const LoginScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  
+  // Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+
+  const showAlert = (message: string) => {
+    setModalMessage(message);
+    setModalOpen(true);
+  };
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -78,14 +88,14 @@ const LoginScreen: React.FC = () => {
       
       if (error) {
          if (error.message.includes("Invalid login credentials")) {
-            alert("Incorrect email or password. Please try again.");
+            showAlert("Incorrect email or password. Please try again.");
          } else {
-             alert(error.message);
+             showAlert(error.message);
          }
          throw error;
       }
 
-      alert("Logged in successfully ✅");
+      showAlert("Logged in successfully ✅");
       setFormData({ email: "", password: "" });
     } catch (error: any) {
       console.error(error);
@@ -96,15 +106,15 @@ const LoginScreen: React.FC = () => {
 
   const handleForgotPassword = async () => {
     if (!formData.email) {
-      alert("Please enter your email first");
+      showAlert("Please enter your email first");
       return;
     }
     try {
       const { error } = await authService.resetPassword(formData.email);
       if (error) throw error;
-      alert("Password reset email sent ✅");
+      showAlert("Password reset email sent ✅");
     } catch (error: any) {
-       alert(error.message);
+       showAlert(error.message);
        console.error(error);
     }
   };
@@ -115,6 +125,11 @@ const LoginScreen: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <Modal 
+        isOpen={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+        message={modalMessage} 
+      />
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
