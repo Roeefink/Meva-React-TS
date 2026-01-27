@@ -10,10 +10,7 @@ const InputContainer = styled.form`
   padding: 16px;
   background: #f7fbfc;
   border-top: 1px solid #e0e0e0;
-  margin-left: -16px;
-  margin-right: -16px;
-  margin-bottom: -20px;
-  width: calc(100% + 32px);
+  /* Removed negative margins and calc width to respect parent padding */
 `;
 
 const Input = styled.input`

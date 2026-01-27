@@ -31,8 +31,7 @@ const Header = styled.div`
 
 const Body = styled.div`
   flex: 1;
-  padding: 20px 16px 0 16px;
-  background: rgb(158, 216, 232);
+  background: #fff;
   display: flex;
   flex-direction: column;
   min-height: 0;
