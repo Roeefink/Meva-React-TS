@@ -12,6 +12,11 @@ const PageContainer = styled.div`
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    min-height: auto; /* Allow flexible height on mobile */
+  }
 `;
 
 const FormCard = styled.div`
@@ -24,6 +29,11 @@ const FormCard = styled.div`
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.5);
   animation: slideUp 0.6s ease-out;
+
+  @media (max-width: 768px) {
+    padding: 24px;
+    border-radius: 16px;
+  }
 
   @keyframes slideUp {
     from { opacity: 0; transform: translateY(20px); }
@@ -41,6 +51,11 @@ const Title = styled.h1`
   background: linear-gradient(120deg, #248fc9, #6dd5fa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+  }
 `;
 
 const InputGroup = styled.div`
