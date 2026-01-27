@@ -161,83 +161,84 @@ const StatusMessage = styled.div<{ type: 'success' | 'error' }>`
 `;
 
 export default function ContactUsPage() {
-    const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-    const [submitting, setSubmitting] = useState(false);
-    const [status, setStatus] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSubmitting(true);
-        setStatus(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setStatus(null);
 
-        try {
-            const response = await fetch('http://localhost:3001/api/v1/feedback', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/v1/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-            if (!response.ok) throw new Error('Failed to submit feedback');
+      if (!response.ok) throw new Error('Failed to submit feedback');
 
-            setStatus({ type: 'success', text: 'Thank you! Your feedback has been sent.' });
-            setFormData({ name: '', email: '', message: '' });
-        } catch (error) {
-            console.error(error);
-            setStatus({ type: 'error', text: 'Something went wrong. Please try again.' });
-        } finally {
-            setSubmitting(false);
-        }
-    };
+      setStatus({ type: 'success', text: 'Thank you! Your feedback has been sent.' });
+      setFormData({ name: '', email: '', message: '' });
+    } catch (error) {
+      console.error(error);
+      setStatus({ type: 'error', text: 'Something went wrong. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    return (
-        <PageContainer>
-            <FormCard>
-                <Title>Get in Touch</Title>
-                <form onSubmit={handleSubmit}>
-                    <InputGroup>
-                        <Label>Name</Label>
-                        <Input 
-                            type="text" 
-                            placeholder="Your Name" 
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            required
-                        />
-                    </InputGroup>
-                    <InputGroup>
-                        <Label>Email</Label>
-                        <Input 
-                            type="email" 
-                            placeholder="your@email.com" 
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            required
-                        />
-                    </InputGroup>
-                    <InputGroup>
-                        <Label>Message</Label>
-                        <TextArea 
-                            placeholder="How can we help you?" 
-                            value={formData.message}
-                            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                            required
-                        />
-                    </InputGroup>
+  return (
+    <PageContainer>
+      <FormCard>
+        <Title>Get in Touch</Title>
+        <form onSubmit={handleSubmit}>
+          <InputGroup>
+            <Label>Name</Label>
+            <Input
+              type="text"
+              placeholder="Your Name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </InputGroup>
+          <InputGroup>
+            <Label>Email</Label>
+            <Input
+              type="email"
+              placeholder="your@email.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+          </InputGroup>
+          <InputGroup>
+            <Label>Message</Label>
+            <TextArea
+              placeholder="How can we help you?"
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              required
+            />
+          </InputGroup>
 
-                    <Button type="submit" disabled={submitting}>
-                        {submitting ? 'Sending...' : (
-                            <>Send Feedback <Send size={18} /></>
-                        )}
-                    </Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Sending...' : (
+              <>Send Feedback <Send size={18} /></>
+            )}
+          </Button>
 
-                    {status && (
-                        <StatusMessage type={status.type}>
-                            {status.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-                            {status.text}
-                        </StatusMessage>
-                    )}
-                </form>
-            </FormCard>
-        </PageContainer>
-    );
+          {status && (
+            <StatusMessage type={status.type}>
+              {status.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+              {status.text}
+            </StatusMessage>
+          )}
+        </form>
+      </FormCard>
+    </PageContainer>
+  );
 }

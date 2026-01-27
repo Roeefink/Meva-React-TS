@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'], // Add mobile app URL schemes here later
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://roeefink.github.io'], // Add mobile app URL schemes here later
   credentials: true
 }));
 app.use(express.json());
