@@ -38,8 +38,7 @@ router.post('/', async (req: Request, res: Response) => {
                 },
                 tls: {
                     rejectUnauthorized: false
-                }
-            }, {
+                },
                 // Force IPv4 to avoid IPv6 timeouts
                 family: 4
             });
