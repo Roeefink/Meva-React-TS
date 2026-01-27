@@ -41,7 +41,7 @@ router.post('/', async (req: Request, res: Response) => {
                 },
                 // Force IPv4 to avoid IPv6 timeouts
                 family: 4
-            });
+            } as any);
 
             // Non-blocking email sending
             transporter.sendMail({
