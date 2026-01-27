@@ -37,8 +37,11 @@ router.post('/', async (req: Request, res: Response) => {
                     pass: process.env.GMAIL_APP_PASSWORD
                 },
                 tls: {
-                    rejectUnauthorized: false // Help with self-signed certs or strict firewalls
+                    rejectUnauthorized: false
                 }
+            }, {
+                // Force IPv4 to avoid IPv6 timeouts
+                family: 4
             });
 
             // Non-blocking email sending
