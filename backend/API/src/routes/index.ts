@@ -15,4 +15,8 @@ router.use('/info', infoRouter);
 import chatRouter from './chat.js';
 router.use('/chat', chatRouter);
 
+// Feedback routes
+import feedbackRouter from './feedback.js';
+router.use('/feedback', feedbackRouter);
+
 export default router;

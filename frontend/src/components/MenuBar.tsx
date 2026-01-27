@@ -118,7 +118,7 @@ export default function MenuBar() {
               setOpen(false);
             }}
           >
-            Contact
+            Feedback
           </li>
           <br />
           <li
