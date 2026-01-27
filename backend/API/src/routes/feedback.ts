@@ -30,12 +30,14 @@ router.post('/', async (req: Request, res: Response) => {
 
             const transporter = nodemailer.createTransport({
                 host: 'smtp.gmail.com',
-                port: 587,
-                secure: false, // true for 465, false for other ports
-                requireTLS: true,
+                port: 465,
+                secure: true, // true for 465, false for other ports
                 auth: {
                     user: process.env.GMAIL_USER,
                     pass: process.env.GMAIL_APP_PASSWORD
+                },
+                tls: {
+                    rejectUnauthorized: false // Help with self-signed certs or strict firewalls
                 }
             });
 
