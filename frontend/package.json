@@ -1,7 +1,7 @@
 {
   "name": "meva-medical",
   "private": true,
-  "homepage": "https://Roeefink.github.io/Meva-React-TS",
+  "homepage": "https://roeefink.github.io/Meva-React-TS",
   "version": "3.0.2",
   "type": "module",
   "scripts": {
