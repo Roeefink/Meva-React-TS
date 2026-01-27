@@ -39,7 +39,8 @@ router.post('/', async (req: Request, res: Response) => {
                     }
                 });
 
-                await transporter.sendMail({
+                // Non-blocking email sending
+                transporter.sendMail({
                     from: `"Meva Medical" <${process.env.GMAIL_USER}>`,
                     to: 'mevamedicalusa@gmail.com',
                     replyTo: email, // Reply directly to the user
@@ -53,23 +54,20 @@ router.post('/', async (req: Request, res: Response) => {
                         <p><strong>Message:</strong></p>
                         <p>${message.replace(/\n/g, '<br/>')}</p>
                     `
+                }).then(() => {
+                    console.log(`Email sent to mevamedicalusa@gmail.com`);
+                }).catch((emailError) => {
+                    console.error('Failed to send email:', emailError);
                 });
-                console.log(`Email sent to mevamedicalusa@gmail.com`);
-            } catch (emailError) {
-                console.error('Failed to send email:', emailError);
-                // Return success if DB worked? Or warn?
-                // Let's assume critical failure if email fails for now? 
-                // No, better to return 200 if at least one succeeded.
+            } else {
+                console.warn('Skipping email: GMAIL_USER or GMAIL_APP_PASSWORD not set.');
             }
-        } else {
-            console.warn('Skipping email: GMAIL_USER or GMAIL_APP_PASSWORD not set.');
-        }
 
-        res.status(201).json({ message: 'Feedback received successfully' });
-    } catch (error: any) {
-        console.error('Error processing feedback:', error);
-        res.status(500).json({ error: 'Failed to submit feedback' });
-    }
-});
+            res.status(201).json({ message: 'Feedback received successfully' });
+        } catch (error: any) {
+            console.error('Error processing feedback:', error);
+            res.status(500).json({ error: 'Failed to submit feedback' });
+        }
+    });
 
 export default router;
