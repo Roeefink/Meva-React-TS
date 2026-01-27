@@ -2,7 +2,7 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import { supabase } from '../config/supabase.js';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 const router = express.Router();
 
@@ -25,46 +25,34 @@ router.post('/', async (req: Request, res: Response) => {
             // Non-blocking error, we still try to send email
         }
 
-        // Send Email via Gmail
-        if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+        // Send Email via Resend (HTTP)
+        if (process.env.RESEND_API_KEY) {
+            const resend = new Resend(process.env.RESEND_API_KEY);
 
-            const transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 465,
-                secure: true, // true for 465, false for other ports
-                auth: {
-                    user: process.env.GMAIL_USER,
-                    pass: process.env.GMAIL_APP_PASSWORD
-                },
-                tls: {
-                    rejectUnauthorized: false
-                },
-                // Force IPv4 to avoid IPv6 timeouts
-                family: 4
-            } as any);
-
-            // Non-blocking email sending
-            transporter.sendMail({
-                from: `"Meva Medical" <${process.env.GMAIL_USER}>`,
+            resend.emails.send({
+                from: 'Meva Medical <onboarding@resend.dev>', // Default testing domain
                 to: 'mevamedicalusa@gmail.com',
-                replyTo: email, // Reply directly to the user
                 subject: `New Feedback from ${name}`,
-                text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+                replyTo: email,
                 html: `
-                        <h3>New Feedback Received</h3>
-                        <p><strong>Name:</strong> ${name}</p>
-                        <p><strong>Email:</strong> ${email}</p>
-                        <hr/>
-                        <p><strong>Message:</strong></p>
-                        <p>${message.replace(/\n/g, '<br/>')}</p>
-                    `
-            }).then(() => {
-                console.log(`Email sent to mevamedicalusa@gmail.com`);
-            }).catch((emailError) => {
-                console.error('Failed to send email:', emailError);
+                    <h3>New Feedback Received</h3>
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <hr/>
+                    <p><strong>Message:</strong></p>
+                    <p>${message.replace(/\n/g, '<br/>')}</p>
+                `
+            }).then((response: any) => {
+                if (response.error) {
+                    console.error('Failed to send email (Resend):', response.error);
+                } else {
+                    console.log(`Email sent to mevamedicalusa@gmail.com. ID: ${response.data?.id}`);
+                }
+            }).catch((emailError: any) => {
+                console.error('Unexpected error sending email:', emailError);
             });
         } else {
-            console.warn('Skipping email: GMAIL_USER or GMAIL_APP_PASSWORD not set.');
+            console.warn('Skipping email: RESEND_API_KEY not set.');
         }
 
         res.status(201).json({ message: 'Feedback received successfully' });
