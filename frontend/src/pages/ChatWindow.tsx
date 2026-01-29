@@ -116,6 +116,17 @@ const LoadingIndicator = styled.div`
   align-self: center; /* Keep loader centered though */
 `;
 
+const WELCOME_MESSAGES = [
+  "How can I help you today?",
+  "What’s on your mind?",
+  "Ready when you are! What should we talk about?",
+  "Let’s get started. Ask me anything."
+];
+
+const getRandomWelcomeMessage = () => {
+  return WELCOME_MESSAGES[Math.floor(Math.random() * WELCOME_MESSAGES.length)];
+};
+
 const ChatWindow: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -196,7 +207,7 @@ const ChatWindow: React.FC = () => {
           setMessages([{
             id: Date.now(),
             sender: "bot",
-            text: "New chat started. How can I help you?",
+            text: getRandomWelcomeMessage(),
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           }]);
         }
@@ -234,7 +245,7 @@ const ChatWindow: React.FC = () => {
             setMessages([{
               id: Date.now(),
               sender: "bot",
-              text: "Start a new conversation.",
+              text: getRandomWelcomeMessage(),
               timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             }]);
           }
@@ -333,7 +344,7 @@ const ChatWindow: React.FC = () => {
           setMessages([{
             id: Date.now(),
             sender: "bot",
-            text: "No chats yet. How can I help?",
+            text: getRandomWelcomeMessage(),
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           }]);
         }
@@ -363,22 +374,7 @@ const ChatWindow: React.FC = () => {
   const deleteAllSessions = async () => {
     if (!userToken) return;
 
-    // Store previous state for rollback
-    const previousSessions = [...sessions];
-    const previousActiveId = activeSessionId;
-    const previousMessages = [...messages];
-
     try {
-      // Optimistic update
-      setSessions([]);
-      setActiveSessionId(null);
-      setMessages([{
-        id: Date.now(),
-        sender: "bot",
-        text: "No chats yet. How can I help?",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      }]);
-
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const response = await fetch(`${API_URL}/api/v1/chat/sessions`, {
         method: 'DELETE',
@@ -388,15 +384,17 @@ const ChatWindow: React.FC = () => {
       if (!response.ok) {
         throw new Error("Failed to delete all sessions");
       }
+
+      // Success: Clear local state
+      setSessions([]);
+      setMessages([]); // Clear messages momentarily
+
+      // Immediately create a new session so the user is ready to type
+      await createSession(userToken);
+
     } catch (err) {
       console.error("Failed to delete all sessions", err);
       alert("Failed to delete all history. Please try again.");
-      // Revert state
-      setSessions(previousSessions);
-      setActiveSessionId(previousActiveId);
-      setMessages(previousMessages);
-
-      fetchSessions(userToken);
     }
   };
 

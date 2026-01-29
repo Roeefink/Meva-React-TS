@@ -153,6 +153,20 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
             }
         );
 
+        // Fetch previous chat history for context
+        // We fetch BEFORE inserting the new message so we don't duplicate it or have to filter it out
+        const { data: previousMessages, error: historyError } = await scopedSupabase
+            .from('chat_messages')
+            .select('sender, content')
+            .eq('session_id', sessionId)
+            .order('created_at', { ascending: false })
+            .limit(10); // Limit context to last 10 messages
+
+        if (historyError) {
+            console.error('Error fetching chat history for context:', historyError);
+            // We continue without history if there's an error
+        }
+
         // 1. Save User Message
         const { error: userMsgError } = await scopedSupabase
             .from('chat_messages')
@@ -223,11 +237,18 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
             return res.json({ reply: mockReply });
         }
 
+        // Prepare context for OpenAI
+        const historyContext = (previousMessages || []).reverse().map(msg => ({
+            role: msg.sender === 'user' ? ('user' as const) : ('assistant' as const),
+            content: msg.content
+        }));
+
         // Call OpenAI
         const completion = await openai.chat.completions.create({
             messages: [
                 { role: "system", content: "You are a helpful and knowledgeable medical assistant. Provide clear, accurate, and empathetic responses. Always advise users to consult with a real doctor for medical advice." },
-                { role: "user", content: message }
+                ...historyContext,
+                { role: "user", content: `(User's current message): ${message}` }
             ],
             model: "gpt-3.5-turbo",
         });
