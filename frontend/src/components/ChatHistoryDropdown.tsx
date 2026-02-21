@@ -3,16 +3,16 @@ import styled from "styled-components";
 import { MessageSquare, CalendarClock, Trash2 } from "lucide-react";
 
 interface Session {
-  id: number;
+  id: string; // Changed from number to string for MongoDB ObjectId
   title: string;
   created_at: string;
 }
 
 interface Props {
   sessions: Session[];
-  activeSessionId: number | null;
-  onSelectSession: (id: number) => void;
-  onDeleteSession: (id: number) => void;
+  activeSessionId: string | null;
+  onSelectSession: (id: string) => void;
+  onDeleteSession: (id: string) => void;
   onDeleteAllSessions: () => void;
   isOpen: boolean;
   onClose: () => void;
@@ -172,7 +172,7 @@ const ChatHistoryDropdown: React.FC<Props> = ({ sessions, activeSessionId, onSel
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        containerRef.current && 
+        containerRef.current &&
         !containerRef.current.contains(event.target as Node) &&
         toggleRef.current &&
         !toggleRef.current.contains(event.target as Node)
@@ -197,44 +197,44 @@ const ChatHistoryDropdown: React.FC<Props> = ({ sessions, activeSessionId, onSel
       </Header>
       <List>
         {sessions.length === 0 ? (
-             <EmptyState>No history yet</EmptyState>
+          <EmptyState>No history yet</EmptyState>
         ) : (
-            sessions.map((session) => (
+          sessions.map((session) => (
             <Item
-                key={session.id}
-                isActive={session.id === activeSessionId}
-                onClick={() => {
+              key={session.id}
+              isActive={session.id === activeSessionId}
+              onClick={() => {
                 onSelectSession(session.id);
                 onClose();
-                }}
+              }}
             >
-                <MessageSquare size={18} opacity={session.id === activeSessionId ? 1 : 0.6} />
-                <Title>{session.title}</Title>
-                <DateText>
-                    {new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </DateText>
-                <DeleteButton
-                    onClick={(e) => {
-                        e.stopPropagation(); // Prevent selecting the session
-                        if (window.confirm("Are you sure you want to delete this chat?")) {
-                            onDeleteSession(session.id);
-                        }
-                    }}
-                    title="Delete Chat"
-                >
-                    <Trash2 size={16} />
-                </DeleteButton>
+              <MessageSquare size={18} opacity={session.id === activeSessionId ? 1 : 0.6} />
+              <Title>{session.title}</Title>
+              <DateText>
+                {new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </DateText>
+              <DeleteButton
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent selecting the session
+                  if (window.confirm("Are you sure you want to delete this chat?")) {
+                    onDeleteSession(session.id);
+                  }
+                }}
+                title="Delete Chat"
+              >
+                <Trash2 size={16} />
+              </DeleteButton>
             </Item>
-            ))
+          ))
         )}
       </List>
       {sessions.length > 0 && (
         <Footer>
           <ClearAllButton onClick={() => {
-              if (window.confirm("Are you sure you want to delete ALL chat history? This cannot be undone.")) {
-                  onDeleteAllSessions();
-                  onClose();
-              }
+            if (window.confirm("Are you sure you want to delete ALL chat history? This cannot be undone.")) {
+              onDeleteAllSessions();
+              onClose();
+            }
           }}>
             <Trash2 size={16} />
             Clear All History

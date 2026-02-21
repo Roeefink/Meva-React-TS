@@ -33,17 +33,19 @@ const Bubble = styled.div<{ sender: "user" | "bot" }>`
   ${({ sender }) =>
     sender === "user"
       ? css`
+          /* User: Left Side, Blue Background */
+          align-self: flex-start;
           background: linear-gradient(135deg, rgb(36, 143, 201), rgb(25, 110, 160));
           color: #fff;
-          align-self: flex-end;
-          border-bottom-right-radius: 4px;
+          border-bottom-left-radius: 4px;
           box-shadow: 0 4px 15px rgba(36, 143, 201, 0.3);
         `
       : css`
+          /* Bot: Right Side, White Background */
+          align-self: flex-end;
           background: #ffffff;
           color: #2d3748;
-          align-self: flex-start;
-          border-bottom-left-radius: 4px;
+          border-bottom-right-radius: 4px;
           border: 1px solid rgba(0, 0, 0, 0.05);
           box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         `}

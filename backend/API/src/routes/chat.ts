@@ -1,4 +1,3 @@
-
 import express from 'express';
 import type { Request, Response } from 'express';
 import OpenAI from 'openai';
@@ -7,8 +6,8 @@ import fs from 'fs';
 import path from 'path';
 import { authenticate } from '../middleware/auth.js';
 import type { AuthRequest } from '../middleware/auth.js';
-import { supabase } from '../config/supabase.js';
-import { createClient } from '@supabase/supabase-js';
+import { ChatSession } from '../models/ChatSession.js';
+import { ChatMessage } from '../models/ChatMessage.js';
 
 dotenv.config();
 
@@ -31,21 +30,18 @@ const getOpenAIClient = () => {
 // GET /api/v1/chat/sessions - List all chat sessions
 router.get('/sessions', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const scopedSupabase = createClient(
-            process.env.SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY!,
-            { global: { headers: { Authorization: req.headers.authorization! } } }
-        );
+        const sessions = await ChatSession.find({ user_id: req.user!.id })
+            .sort({ created_at: -1 });
 
-        const { data, error } = await scopedSupabase
-            .from('chat_sessions')
-            .select('*')
-            .eq('user_id', req.user!.id)
-            .order('created_at', { ascending: false });
+        // Map _id to id for frontend compatibility
+        const formattedSessions = sessions.map(session => ({
+            id: session._id,
+            user_id: session.user_id,
+            title: session.title,
+            created_at: session.toObject().created_at // specific access to timestamp
+        }));
 
-        if (error) throw error;
-
-        res.json({ sessions: data });
+        res.json({ sessions: formattedSessions });
     } catch (error: any) {
         console.error('Error fetching sessions:', error);
         res.status(500).json({ error: 'Failed to fetch sessions' });
@@ -55,24 +51,19 @@ router.get('/sessions', authenticate, async (req: AuthRequest, res: Response) =>
 // POST /api/v1/chat/sessions - Create new session
 router.post('/sessions', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const scopedSupabase = createClient(
-            process.env.SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY!,
-            { global: { headers: { Authorization: req.headers.authorization! } } }
-        );
+        const newSession = await ChatSession.create({
+            user_id: req.user!.id,
+            title: 'New Chat'
+        });
 
-        const { data, error } = await scopedSupabase
-            .from('chat_sessions')
-            .insert([{
-                user_id: req.user!.id,
-                title: 'New Chat' // Default title, can be updated later
-            }])
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        res.json({ session: data });
+        res.json({
+            session: {
+                id: newSession._id,
+                user_id: newSession.user_id,
+                title: newSession.title,
+                created_at: newSession.toObject().created_at
+            }
+        });
     } catch (error: any) {
         console.error('Error creating session:', error);
         res.status(500).json({ error: 'Failed to create session' });
@@ -84,46 +75,29 @@ router.post('/sessions', authenticate, async (req: AuthRequest, res: Response) =
 // GET /api/v1/chat - Get chat history for specific session
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const sessionId = req.query.sessionId;
+        const sessionId = req.query.sessionId as string;
 
         if (!sessionId) {
             return res.status(400).json({ error: 'Session ID is required' });
         }
 
-        // Create a scoped Supabase client to pass RLS checks
-        const scopedSupabase = createClient(
-            process.env.SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY!,
-            {
-                global: {
-                    headers: {
-                        Authorization: req.headers.authorization!
-                    }
-                }
-            }
-        );
-
-        const { data, error } = await scopedSupabase
-            .from('chat_messages')
-            .select('*')
-            .eq('user_id', req.user!.id)
-            .eq('session_id', sessionId) // Filter by session
-            .order('created_at', { ascending: true });
-
-        if (error) throw error;
+        const messages = await ChatMessage.find({
+            user_id: req.user!.id,
+            session_id: sessionId
+        }).sort({ created_at: 1 });
 
         // Map to frontend format
-        const messages = data.map(msg => ({
-            id: msg.id,
+        const formattedMessages = messages.map(msg => ({
+            id: msg._id,
             sender: msg.sender,
             text: msg.content,
-            timestamp: new Date(msg.created_at).toLocaleTimeString([], {
+            timestamp: new Date(msg.toObject().created_at).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit'
             })
         }));
 
-        res.json({ messages });
+        res.json({ messages: formattedMessages });
     } catch (error: any) {
         console.error('Error fetching chat history:', error);
         res.status(500).json({ error: 'Failed to fetch chat history' });
@@ -139,60 +113,25 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ error: 'Message and Session ID are required' });
         }
 
-        // Create a scoped Supabase client that inherits the user's JWT
-        // This ensures RLS policies work correctly (auth.uid() == user_id)
-        const scopedSupabase = createClient(
-            process.env.SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY!,
-            {
-                global: {
-                    headers: {
-                        Authorization: req.headers.authorization!
-                    }
-                }
-            }
-        );
-
-        // Fetch previous chat history for context
-        // We fetch BEFORE inserting the new message so we don't duplicate it or have to filter it out
-        const { data: previousMessages, error: historyError } = await scopedSupabase
-            .from('chat_messages')
-            .select('sender, content')
-            .eq('session_id', sessionId)
-            .order('created_at', { ascending: false })
-            .limit(10); // Limit context to last 10 messages
-
-        if (historyError) {
-            console.error('Error fetching chat history for context:', historyError);
-            // We continue without history if there's an error
-        }
+        // Fetch previous chat history for context from MongoDB
+        const previousMessages = await ChatMessage.find({
+            session_id: sessionId
+        })
+            .sort({ created_at: -1 })
+            .limit(10);
 
         // 1. Save User Message
-        const { error: userMsgError } = await scopedSupabase
-            .from('chat_messages')
-            .insert([{
-                user_id: req.user!.id,
-                session_id: sessionId,
-                sender: 'user',
-                content: message
-            }]);
+        const userMsg = await ChatMessage.create({
+            user_id: req.user!.id,
+            session_id: sessionId,
+            sender: 'user',
+            content: message
+        });
 
-        if (userMsgError) {
-            console.error('Error saving user message:', userMsgError);
-            throw new Error(`Failed to save message history: ${userMsgError.message} (Code: ${userMsgError.code})`);
-        }
-
-        // Auto-Titling: Check if this is a "New Chat" and update the title
-        // We do this asynchronously so it doesn't block the response
+        // Auto-Titling
         (async () => {
             try {
-                // Get current session title
-                const { data: session } = await scopedSupabase
-                    .from('chat_sessions')
-                    .select('title')
-                    .eq('id', sessionId)
-                    .single();
-
+                const session = await ChatSession.findById(sessionId);
                 if (session && session.title === 'New Chat') {
                     const titleOpenAI = getOpenAIClient();
                     if (titleOpenAI) {
@@ -207,11 +146,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
                         const newTitle = titleCompletion.choices[0].message.content?.trim() || "New Chat";
 
-                        await scopedSupabase
-                            .from('chat_sessions')
-                            .update({ title: newTitle })
-                            .eq('id', sessionId);
-
+                        await ChatSession.findByIdAndUpdate(sessionId, { title: newTitle });
                         console.log(`Updated session ${sessionId} title to: ${newTitle}`);
                     }
                 }
@@ -226,13 +161,12 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         if (!openai) {
             const mockReply = "I am currently in mock mode because the OpenAI API Key is missing. Please configure it in the backend .env file.";
 
-            // Save mock reply
-            await scopedSupabase.from('chat_messages').insert([{
+            await ChatMessage.create({
                 user_id: req.user!.id,
                 session_id: sessionId,
                 sender: 'bot',
                 content: mockReply
-            }]);
+            });
 
             return res.json({ reply: mockReply });
         }
@@ -256,19 +190,12 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         const reply = completion.choices[0].message.content || "I'm sorry, I couldn't generate a response.";
 
         // 2. Save Bot Message
-        const { error: botMsgError } = await scopedSupabase
-            .from('chat_messages')
-            .insert([{
-                user_id: req.user!.id,
-                session_id: sessionId,
-                sender: 'bot',
-                content: reply
-            }]);
-
-        if (botMsgError) {
-            console.error('Error saving bot message:', botMsgError);
-            // Don't fail the request if just saving the bot message fails, return the reply anyway
-        }
+        await ChatMessage.create({
+            user_id: req.user!.id,
+            session_id: sessionId,
+            sender: 'bot',
+            content: reply
+        });
 
         res.json({ reply });
 
@@ -284,48 +211,13 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
 // DELETE /api/v1/chat/sessions - Delete all sessions
 router.delete('/sessions', authenticate, async (req: AuthRequest, res: Response) => {
-    const logPath = path.join(process.cwd(), 'backend_debug.log');
-    const log = (msg: string) => { try { fs.appendFileSync(logPath, `${new Date().toISOString()} - ${msg}\n`); } catch (e) { console.error('Log error', e) } };
-
     try {
-        log(`[DELETE ALL] User: ${req.user?.id}`);
-
-        // Use Service Role Key to bypass RLS
-        const adminSupabase = createClient(
-            process.env.SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-
-        // Manual cascade: Delete all messages for this user first
-        const { data: deletedMsgs, error: msgError } = await adminSupabase
-            .from('chat_messages')
-            .delete()
-            .eq('user_id', req.user!.id)
-            .select();
-
-        if (msgError) {
-            log(`[DELETE ALL] Message Error: ${JSON.stringify(msgError)}`);
-            throw msgError;
-        }
-        log(`[DELETE ALL] Deleted ${deletedMsgs?.length} messages`);
-
-        // Then delete all sessions for this user
-        const { data: deletedSessions, error: sessionError } = await adminSupabase
-            .from('chat_sessions')
-            .delete()
-            .eq('user_id', req.user!.id)
-            .select();
-
-        if (sessionError) {
-            log(`[DELETE ALL] Session Error: ${JSON.stringify(sessionError)}`);
-            throw sessionError;
-        }
-        log(`[DELETE ALL] Deleted ${deletedSessions?.length} sessions`);
+        await ChatMessage.deleteMany({ user_id: req.user!.id });
+        await ChatSession.deleteMany({ user_id: req.user!.id });
 
         res.json({ message: 'All sessions deleted successfully' });
     } catch (error: any) {
         console.error('Error deleting all sessions:', error);
-        log(`[DELETE ALL] Exception: ${JSON.stringify(error)}`);
         res.status(500).json({ error: 'Failed to delete all sessions' });
     }
 });
@@ -339,32 +231,18 @@ router.delete('/sessions/:id', authenticate, async (req: AuthRequest, res: Respo
             return res.status(400).json({ error: 'Session ID is required' });
         }
 
-        // Use Service Role Key to bypass RLS for deletion
-        const adminSupabase = createClient(
-            process.env.SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
+        // Delete messages associated with the session first
+        await ChatMessage.deleteMany({ session_id: sessionId });
 
-        // Delete the session (cascade will delete messages)
-        // Manual cascade: Delete messages first
-        const { error: msgError } = await adminSupabase
-            .from('chat_messages')
-            .delete()
-            .eq('session_id', sessionId); // Allow deleting by session_id without user_id filter on messages if consistent, but safer to keeping user_id if column exists? 
-        // Actually messages usually have user_id. Let's keep it simple.
-        // But wait, if we use admin client, we MUST be careful.
-        // Let's filter by session_id. The session_id is unique enough (serial/uuid?). 
-        // In the previous code, messages has session_id.
+        // Delete the session itself, ensuring it belongs to the user
+        const result = await ChatSession.findOneAndDelete({
+            _id: sessionId,
+            user_id: req.user!.id
+        });
 
-        if (msgError) throw msgError;
-
-        const { error } = await adminSupabase
-            .from('chat_sessions')
-            .delete()
-            .eq('id', sessionId)
-            .eq('user_id', req.user!.id); // CRITICAL: Ensure we only delete sessions belonging to the user
-
-        if (error) throw error;
+        if (!result) {
+            return res.status(404).json({ error: 'Session not found' });
+        }
 
         res.json({ message: 'Session deleted successfully' });
     } catch (error: any) {

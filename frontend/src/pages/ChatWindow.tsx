@@ -7,14 +7,14 @@ import ChatHistoryDropdown from "../components/ChatHistoryDropdown";
 import { supabase } from "../config/Supabase";
 
 export interface Message {
-  id: number;
+  id: string; // Changed from number to string for MongoDB ObjectId compatibility
   sender: "user" | "bot";
   text: string;
   timestamp: string;
 }
 
 interface Session {
-  id: number;
+  id: string; // Changed from number to string for MongoDB ObjectId compatibility
   title: string;
   created_at: string;
 }
@@ -130,7 +130,7 @@ const getRandomWelcomeMessage = () => {
 const ChatWindow: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [userToken, setUserToken] = useState<string | null>(null);
@@ -144,7 +144,7 @@ const ChatWindow: React.FC = () => {
 
       if (!token) {
         setMessages([{
-          id: 1,
+          id: '1',
           sender: "bot",
           text: "Hello! Please log in to chat with the medical assistant.",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -205,7 +205,7 @@ const ChatWindow: React.FC = () => {
 
         if (!initialMessage) {
           setMessages([{
-            id: Date.now(),
+            id: Date.now().toString(),
             sender: "bot",
             text: getRandomWelcomeMessage(),
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -243,7 +243,7 @@ const ChatWindow: React.FC = () => {
             setMessages(data.messages);
           } else {
             setMessages([{
-              id: Date.now(),
+              id: Date.now().toString(),
               sender: "bot",
               text: getRandomWelcomeMessage(),
               timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -274,7 +274,7 @@ const ChatWindow: React.FC = () => {
     }
 
     const userMsg: Message = {
-      id: Date.now(),
+      id: Date.now().toString(),
       sender: "user",
       text,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -298,7 +298,7 @@ const ChatWindow: React.FC = () => {
       if (!response.ok) throw new Error(data.error);
 
       const botMsg: Message = {
-        id: Date.now() + 1,
+        id: (Date.now() + 1).toString(),
         sender: "bot",
         text: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -312,7 +312,7 @@ const ChatWindow: React.FC = () => {
     } catch (error: any) {
       console.error("Chat Error:", error);
       const errorMsg: Message = {
-        id: Date.now() + 1,
+        id: (Date.now() + 1).toString(),
         sender: "bot",
         text: "Error: " + error.message,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -324,7 +324,7 @@ const ChatWindow: React.FC = () => {
   };
 
   // 5. Delete Session
-  const deleteSession = async (sessionId: number) => {
+  const deleteSession = async (sessionId: string) => {
     if (!userToken) return;
 
     // Store previous state for rollback
@@ -342,7 +342,7 @@ const ChatWindow: React.FC = () => {
         } else {
           setActiveSessionId(null);
           setMessages([{
-            id: Date.now(),
+            id: Date.now().toString(),
             sender: "bot",
             text: getRandomWelcomeMessage(),
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),

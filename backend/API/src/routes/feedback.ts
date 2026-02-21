@@ -1,7 +1,7 @@
 
 import express from 'express';
 import type { Request, Response } from 'express';
-import { supabase } from '../config/supabase.js';
+import { Feedback } from '../models/Feedback.js';
 import { Resend } from 'resend';
 
 const router = express.Router();
@@ -15,13 +15,11 @@ router.post('/', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Name, email, and message are required' });
         }
 
-        // Insert into Supabase (Backup/Log)
-        const { error } = await supabase
-            .from('feedback')
-            .insert([{ name, email, message }]);
-
-        if (error) {
-            console.error('Supabase feedback insert error:', error);
+        // Insert into MongoDB (Backup/Log)
+        try {
+            await Feedback.create({ name, email, message });
+        } catch (error: any) {
+            console.error('MongoDB feedback insert error:', error);
             // Non-blocking error, we still try to send email
         }
 

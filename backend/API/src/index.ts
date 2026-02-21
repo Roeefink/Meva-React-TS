@@ -9,7 +9,11 @@ import path from 'path';
 // Load environment variables from the root of the API service
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
+import { connectDB } from './config/db.js';
+connectDB();
+
 // Initialize Express
+// Restart trigger
 const app = express();
 const PORT = process.env.PORT || 3001;
 
