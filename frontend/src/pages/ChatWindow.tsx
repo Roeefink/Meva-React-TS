@@ -7,14 +7,14 @@ import ChatHistoryDropdown from "../components/ChatHistoryDropdown";
 import { supabase } from "../config/Supabase";
 
 export interface Message {
-  id: string; // Changed from number to string for MongoDB ObjectId compatibility
+  id: string;
   sender: "user" | "bot";
   text: string;
   timestamp: string;
 }
 
 interface Session {
-  id: string; // Changed from number to string for MongoDB ObjectId compatibility
+  id: string;
   title: string;
   created_at: string;
 }
@@ -176,6 +176,8 @@ const ChatWindow: React.FC = () => {
         // Only auto-select if we have sessions AND we don't have an active one yet.
         if (sessionList.length > 0 && activeSessionId === null) {
           setActiveSessionId(sessionList[0].id);
+        } else if (sessionList.length === 0) {
+          createSession(token);
         }
       }
     } catch (err) {
@@ -333,20 +335,16 @@ const ChatWindow: React.FC = () => {
 
     try {
       // Optimistic update
-      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      const remaining = sessions.filter(s => s.id !== sessionId);
+      setSessions(remaining);
 
       if (activeSessionId === sessionId) {
-        const remaining = sessions.filter(s => s.id !== sessionId);
         if (remaining.length > 0) {
           setActiveSessionId(remaining[0].id);
         } else {
           setActiveSessionId(null);
-          setMessages([{
-            id: Date.now().toString(),
-            sender: "bot",
-            text: getRandomWelcomeMessage(),
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          }]);
+          setMessages([]);
+          createSession(userToken);
         }
       }
 

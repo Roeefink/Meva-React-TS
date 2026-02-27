@@ -1,7 +1,7 @@
 
 import express from 'express';
 import type { Request, Response } from 'express';
-import { Feedback } from '../models/Feedback.js';
+import { prisma } from '../config/db.js';
 import { Resend } from 'resend';
 
 const router = express.Router();
@@ -15,11 +15,13 @@ router.post('/', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Name, email, and message are required' });
         }
 
-        // Insert into MongoDB (Backup/Log)
+        // Insert into PostgreSQL (Backup/Log)
         try {
-            await Feedback.create({ name, email, message });
+            await prisma.feedback.create({
+                data: { name, email, message }
+            });
         } catch (error: any) {
-            console.error('MongoDB feedback insert error:', error);
+            console.error('Database feedback insert error:', error);
             // Non-blocking error, we still try to send email
         }
 

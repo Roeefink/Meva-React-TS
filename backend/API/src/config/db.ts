@@ -1,10 +1,11 @@
+import { PrismaClient } from '@prisma/client';
 
-import mongoose from 'mongoose';
+export const prisma = new PrismaClient();
 
 export const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/meva_medical');
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    await prisma.$connect();
+    console.log(`PostgreSQL Connected via Prisma`);
   } catch (error: any) {
     console.error(`Error: ${error.message}`);
     process.exit(1);

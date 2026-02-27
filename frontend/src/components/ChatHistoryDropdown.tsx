@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { MessageSquare, CalendarClock, Trash2 } from "lucide-react";
 
 interface Session {
-  id: string; // Changed from number to string for MongoDB ObjectId
+  id: string;
   title: string;
   created_at: string;
 }

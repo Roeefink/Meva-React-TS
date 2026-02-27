@@ -6,8 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { authenticate } from '../middleware/auth.js';
 import type { AuthRequest } from '../middleware/auth.js';
-import { ChatSession } from '../models/ChatSession.js';
-import { ChatMessage } from '../models/ChatMessage.js';
+import { prisma } from '../config/db.js';
 
 dotenv.config();
 
@@ -30,15 +29,17 @@ const getOpenAIClient = () => {
 // GET /api/v1/chat/sessions - List all chat sessions
 router.get('/sessions', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const sessions = await ChatSession.find({ user_id: req.user!.id })
-            .sort({ created_at: -1 });
+        const sessions = await prisma.chatSession.findMany({
+            where: { user_id: req.user!.id },
+            orderBy: { created_at: 'desc' }
+        });
 
         // Map _id to id for frontend compatibility
         const formattedSessions = sessions.map(session => ({
-            id: session._id,
+            id: session.id,
             user_id: session.user_id,
             title: session.title,
-            created_at: session.toObject().created_at // specific access to timestamp
+            created_at: session.created_at
         }));
 
         res.json({ sessions: formattedSessions });
@@ -51,17 +52,19 @@ router.get('/sessions', authenticate, async (req: AuthRequest, res: Response) =>
 // POST /api/v1/chat/sessions - Create new session
 router.post('/sessions', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const newSession = await ChatSession.create({
-            user_id: req.user!.id,
-            title: 'New Chat'
+        const newSession = await prisma.chatSession.create({
+            data: {
+                user_id: req.user!.id,
+                title: 'New Chat'
+            }
         });
 
         res.json({
             session: {
-                id: newSession._id,
+                id: newSession.id,
                 user_id: newSession.user_id,
                 title: newSession.title,
-                created_at: newSession.toObject().created_at
+                created_at: newSession.created_at
             }
         });
     } catch (error: any) {
@@ -81,17 +84,20 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ error: 'Session ID is required' });
         }
 
-        const messages = await ChatMessage.find({
-            user_id: req.user!.id,
-            session_id: sessionId
-        }).sort({ created_at: 1 });
+        const messages = await prisma.chatMessage.findMany({
+            where: {
+                user_id: req.user!.id,
+                session_id: sessionId
+            },
+            orderBy: { created_at: 'asc' }
+        });
 
         // Map to frontend format
         const formattedMessages = messages.map(msg => ({
-            id: msg._id,
+            id: msg.id,
             sender: msg.sender,
             text: msg.content,
-            timestamp: new Date(msg.toObject().created_at).toLocaleTimeString([], {
+            timestamp: new Date(msg.created_at).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit'
             })
@@ -113,25 +119,27 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ error: 'Message and Session ID are required' });
         }
 
-        // Fetch previous chat history for context from MongoDB
-        const previousMessages = await ChatMessage.find({
-            session_id: sessionId
-        })
-            .sort({ created_at: -1 })
-            .limit(10);
+        // Fetch previous chat history for context from database
+        const previousMessages = await prisma.chatMessage.findMany({
+            where: { session_id: sessionId },
+            orderBy: { created_at: 'desc' },
+            take: 10
+        });
 
         // 1. Save User Message
-        const userMsg = await ChatMessage.create({
-            user_id: req.user!.id,
-            session_id: sessionId,
-            sender: 'user',
-            content: message
+        const userMsg = await prisma.chatMessage.create({
+            data: {
+                user_id: req.user!.id,
+                session_id: sessionId,
+                sender: 'user',
+                content: message
+            }
         });
 
         // Auto-Titling
         (async () => {
             try {
-                const session = await ChatSession.findById(sessionId);
+                const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
                 if (session && session.title === 'New Chat') {
                     const titleOpenAI = getOpenAIClient();
                     if (titleOpenAI) {
@@ -146,7 +154,10 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
                         const newTitle = titleCompletion.choices[0].message.content?.trim() || "New Chat";
 
-                        await ChatSession.findByIdAndUpdate(sessionId, { title: newTitle });
+                        await prisma.chatSession.update({
+                            where: { id: sessionId },
+                            data: { title: newTitle }
+                        });
                         console.log(`Updated session ${sessionId} title to: ${newTitle}`);
                     }
                 }
@@ -161,11 +172,13 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         if (!openai) {
             const mockReply = "I am currently in mock mode because the OpenAI API Key is missing. Please configure it in the backend .env file.";
 
-            await ChatMessage.create({
-                user_id: req.user!.id,
-                session_id: sessionId,
-                sender: 'bot',
-                content: mockReply
+            await prisma.chatMessage.create({
+                data: {
+                    user_id: req.user!.id,
+                    session_id: sessionId,
+                    sender: 'bot',
+                    content: mockReply
+                }
             });
 
             return res.json({ reply: mockReply });
@@ -190,11 +203,13 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         const reply = completion.choices[0].message.content || "I'm sorry, I couldn't generate a response.";
 
         // 2. Save Bot Message
-        await ChatMessage.create({
-            user_id: req.user!.id,
-            session_id: sessionId,
-            sender: 'bot',
-            content: reply
+        await prisma.chatMessage.create({
+            data: {
+                user_id: req.user!.id,
+                session_id: sessionId,
+                sender: 'bot',
+                content: reply
+            }
         });
 
         res.json({ reply });
@@ -212,8 +227,8 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 // DELETE /api/v1/chat/sessions - Delete all sessions
 router.delete('/sessions', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        await ChatMessage.deleteMany({ user_id: req.user!.id });
-        await ChatSession.deleteMany({ user_id: req.user!.id });
+        await prisma.chatMessage.deleteMany({ where: { user_id: req.user!.id } });
+        await prisma.chatSession.deleteMany({ where: { user_id: req.user!.id } });
 
         res.json({ message: 'All sessions deleted successfully' });
     } catch (error: any) {
@@ -232,15 +247,17 @@ router.delete('/sessions/:id', authenticate, async (req: AuthRequest, res: Respo
         }
 
         // Delete messages associated with the session first
-        await ChatMessage.deleteMany({ session_id: sessionId });
+        await prisma.chatMessage.deleteMany({ where: { session_id: sessionId } });
 
         // Delete the session itself, ensuring it belongs to the user
-        const result = await ChatSession.findOneAndDelete({
-            _id: sessionId,
-            user_id: req.user!.id
+        const result = await prisma.chatSession.deleteMany({
+            where: {
+                id: sessionId,
+                user_id: req.user!.id
+            }
         });
 
-        if (!result) {
+        if (result.count === 0) {
             return res.status(404).json({ error: 'Session not found' });
         }
 
