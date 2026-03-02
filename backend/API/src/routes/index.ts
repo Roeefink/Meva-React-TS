@@ -19,4 +19,8 @@ router.use('/chat', chatRouter);
 import feedbackRouter from './feedback.js';
 router.use('/feedback', feedbackRouter);
 
+// Patients routes
+import patientsRouter from './patients.js';
+router.use('/patients', patientsRouter);
+
 export default router;

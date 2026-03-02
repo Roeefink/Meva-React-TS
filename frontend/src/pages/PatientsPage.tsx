@@ -1,6 +1,5 @@
 import styled from "styled-components";
-
-import AddPatient from "../components/InfoForm";
+import PatientsList from "../components/PatientsList";
 
 const Container = styled.div`
   padding: 20px;
@@ -11,10 +10,10 @@ const Container = styled.div`
   min-height: 78.3vh;
 `;
 
-export default function AddInfoPage() {
-  return (
-    <Container>
-      <AddPatient />
-    </Container>
-  );
+export default function PatientsPage() {
+    return (
+        <Container>
+            <PatientsList />
+        </Container>
+    );
 }

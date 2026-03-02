@@ -124,11 +124,21 @@ export default function MenuBar() {
           <li
             style={{ cursor: "pointer" }}
             onClick={() => {
-              navigate("/chat/add-info");
+              navigate("/chat/add-patient");
               setOpen(false);
             }}
           >
-            Add Info
+            Add Patient
+          </li>
+          <br />
+          <li
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              navigate("/chat/patients");
+              setOpen(false);
+            }}
+          >
+            Patient List
           </li>
         </ul>
         <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
